@@ -74,8 +74,12 @@ for t=1:10000000
    % calculate the probability of acquiring this state
    P = 0.5*(1-tanh(dE));
    pp = zeros(1,100)+1;
-   pp(ceil(P*100):end) = 0;
-   changeTakesPlace = pp(randi(length(pp)));
+   if (P == 0)
+       pp = zeros(1,100);
+   else
+        pp(ceil(P*100):end) = 0;
+   end
+        changeTakesPlace = pp(randi(length(pp)));
    
    if (changeTakesPlace == 1)
        Z(iRand,jRand) = newZ;
