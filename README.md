@@ -4,7 +4,7 @@ Potts monte carlo models can be used in a computer simulation of microstructure 
 
 Great source of reference for beginners is the publication by Holm and Battaile (https://doi.org/10.1007/s11837-001-0063-2).
 
-Eample of normal grain growth with 50x50x50 cells using the provided C++ code:
+Example of normal grain growth with 50x50x50 cells using the provided C++ code:
 
 0000                         | 0050                        | 0250                        | 0350
 :---------------------------:|:---------------------------:|:---------------------------:|:---------------------------:
