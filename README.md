@@ -9,3 +9,5 @@ Eample of normal grain growth with 50x50x50 cells using the provided C++ code:
 0000                         | 0050                        | 0250                        | 0350
 :---------------------------:|:---------------------------:|:---------------------------:|:---------------------------:
 ![](figures/file-0000.png)  | ![](figures/file-0050.png) | ![](figures/file-0200.png) | ![](figures/file-0350.png)
+
+In the table above, each color represents a unique state = grain orientation. 
