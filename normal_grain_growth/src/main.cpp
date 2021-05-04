@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	// Number of cells = number of cellular automata cells, I won't be plotting point data
 	int nCellsX = 200;
 	int nCellsY = 200;
-	int nCellsZ = 200;
+	int nCellsZ = 20;
 	
 	// Allocate vector
 	vector<vector<vector<int>>> cell_state;
@@ -64,14 +64,14 @@ int main(int argc, char *argv[])
 
 	// March in time
 	int frame = 0;
-	for (int t=0; t<100000001; t++)
+	for (int t=0; t<1000000001; t++)
 	{
 		cout << "t = " << t << endl;
 
 		// Pick a random lattice
 		int i = distribution_i(generator);
 		int j = distribution_j(generator);
-		int k = distribution_j(generator);
+		int k = distribution_k(generator);
 		cout << "[i,j,k] = " << i << ", " << j << ", " << k << endl;
 
 		// Identify the nearest neighbours
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 		}
 
 		// [[ POST-PROCESSING ]]
-		if (t%100000 == 0)
+		if (t%1000000 == 0)
 		{
 			cout << "post-processing ... " << endl;
 			vtkSmartPointer<vtkUnstructuredGrid> grid = allocate_vtk_grid(nCellsX, nCellsY, nCellsZ);
@@ -303,9 +303,9 @@ vtkSmartPointer<vtkUnstructuredGrid> allocate_vtk_grid(int NX, int NY, int NZ)
 	for (int k=0;k<NZ+1;k++){
 	for (int j=0;j<NY+1;j++){
 	for (int i=0;i<NX+1;i++){
-			double point_x = double(i)/double(NX);
-			double point_y = double(j)/double(NY);
-			double point_z = double(k)/double(NZ);
+			double point_x = double(i)/double(1);
+			double point_y = double(j)/double(1);
+			double point_z = double(k)/double(1);
 
 			points->InsertNextPoint(point_x,point_y,point_z);
 	}
