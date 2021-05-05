@@ -33,6 +33,8 @@ or
 MESA_GL_VERSION_OVERRIDE=3.2 ./a.out
 ```
 
+![](gif/demo.gif)
+
 The code will run the monte-carlo simulation. The results will be plotted in the window and saved as screenshots in `../screenshots` directory.
 
 > The user will not be able to interact with the plot because all runs on a single thread. 
