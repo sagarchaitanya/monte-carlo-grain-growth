@@ -29,6 +29,11 @@
 
 using namespace std;
 
+// [[ MEMBER FUNCTIONS ]]
+void preprocessor();
+void run();
+void postprocessor();
+
 // VTK grid:
 vtkSmartPointer<vtkUnstructuredGrid> allocate_vtk_grid(int NX, int NY, int NZ);
 
@@ -56,5 +61,17 @@ vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor;
 // [[ PNG WRITER ]]
 vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter;
 vtkSmartPointer<vtkPNGWriter> writer;
+
+// [[ SCALARS ]]
+int nCellsX;
+int nCellsY;
+int nCellsZ;
+
+int numberOfStates;
+
+std::default_random_engine generator;
+
+int itr = 0;
+int frame = 0;
 
 #endif

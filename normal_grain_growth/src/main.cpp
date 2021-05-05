@@ -4,52 +4,26 @@ int main(int argc, char *argv[])
 {
 	cout << "Main program has started ..." << endl;
 
-	// [[ PRE-PROCESSOR ]]
-	int numberOfStates = 1000;
+	preprocessor();
+	run();
 
-	// Define the VTK grid
-	// Number of cells = number of cellular automata cells, I won't be plotting point data
-	int nCellsX = 50;
-	int nCellsY = 50;
-	int nCellsZ = 50;
-	
-	// Allocate vector
-	cell_state.resize(nCellsX);
-	boundary.resize(nCellsX);
-	for (int i=0; i<nCellsX; i++)			
-	{
-		cell_state[i].resize(nCellsY);
-		boundary[i].resize(nCellsY);
-		for (int j=0; j<nCellsY; j++)
-		{
-			cell_state[i][j].resize(nCellsZ);
-			boundary[i][j].resize(nCellsZ);
-		}
-	}
+	cout << "Main program has successfully finished!" << endl;
+	return EXIT_SUCCESS;
+}
 
-	// Initialize vector
-	std::default_random_engine generator;
-	std::uniform_int_distribution<int> distribution(0,numberOfStates-1);
+void run()
+{
 	std::uniform_int_distribution<int> distribution_i(1,nCellsX-2);	//exclude boundaries
 	std::uniform_int_distribution<int> distribution_j(1,nCellsY-2);
 	std::uniform_int_distribution<int> distribution_k(1,nCellsZ-2);
 
-	// Initialize with random noise
-	int l = 0;
-	for (int i=0; i<nCellsX; i++)
-	for (int j=0; j<nCellsY; j++)
-	for (int k=0; k<nCellsZ; k++)
-	{
-		cell_state[i][j][k] = distribution(generator);
-		boundary[i][j][k] = false;
-	}
-
 	// [[ MAIN LOOP IN TIME ]]
 	// March in time
-	int frame = 0;
-	for (int t=0; t<1000000001; t++)
+	itr = 0;
+	frame = 0;
+	while(1)
 	{
-		cout << "t = " << t << endl;
+		cout << "itr = " << itr << endl;
 
 		// Pick a random lattice
 		int i = distribution_i(generator);
@@ -197,253 +171,296 @@ int main(int argc, char *argv[])
 		}
 
 		// [[ POST-PROCESSING ]]
-		if (t%100000 == 0)
+		if (itr%100000 == 0)
 		{
-			cout << "post-processing ... " << endl;
-
-			for (int i=1; i<nCellsX-1; i++)
-			for (int j=1; j<nCellsY-1; j++)
-			for (int k=1; k<nCellsZ-1; k++)
-			{
-				int thisState = cell_state[i][j][k];
-				std::vector<int> q;
-				q.push_back(cell_state[i-1][j-1][k-1]);
-				q.push_back(cell_state[i-1][j-1][k]);
-				q.push_back(cell_state[i-1][j-1][k+1]);
-				q.push_back(cell_state[i-1][j][k-1]);
-				q.push_back(cell_state[i-1][j][k]);
-				q.push_back(cell_state[i-1][j][k+1]);
-				q.push_back(cell_state[i-1][j+1][k-1]);
-				q.push_back(cell_state[i-1][j+1][k]);
-				q.push_back(cell_state[i-1][j+1][k+1]);
-				q.push_back(cell_state[i][j-1][k-1]);
-				q.push_back(cell_state[i][j-1][k]);
-				q.push_back(cell_state[i][j-1][k+1]);
-				q.push_back(cell_state[i][j][k-1]);
-		//		q.push_back(cell_state[i][j][k]);	// exclude the state itself
-				q.push_back(cell_state[i][j][k+1]);
-				q.push_back(cell_state[i][j+1][k-1]);
-				q.push_back(cell_state[i][j+1][k]);
-				q.push_back(cell_state[i][j+1][k+1]);
-				q.push_back(cell_state[i+1][j-1][k-1]);
-				q.push_back(cell_state[i+1][j-1][k]);
-				q.push_back(cell_state[i+1][j-1][k+1]);
-				q.push_back(cell_state[i+1][j][k-1]);
-				q.push_back(cell_state[i+1][j][k]);
-				q.push_back(cell_state[i+1][j][k+1]);
-				q.push_back(cell_state[i+1][j+1][k-1]);
-				q.push_back(cell_state[i+1][j+1][k]);
-				q.push_back(cell_state[i+1][j+1][k+1]);
-
-				boundary[i][j][k] = false;
-				for (int qq=0; qq<q.size(); qq++)
-					if (thisState != q[qq])
-					{
-						boundary[i][j][k] = true;
-						break;
-					}
-			}
-			// Periodic boundary conditions
-			for (int i=0; i<nCellsX; i++)
-			for (int j=0; j<nCellsY; j++)
-			{
-				boundary[i][j][0] = boundary[i][j][nCellsZ-2];
-				boundary[i][j][nCellsZ-1] = boundary[i][j][1];
-			}
-			for (int j=0; j<nCellsY; j++)
-			for (int k=0; k<nCellsZ; k++)
-			{
-				boundary[0][j][k] = boundary[nCellsX-2][j][k];
-				boundary[nCellsX-1][j][k] = boundary[1][j][k];
-			}
-			for (int i=0; i<nCellsX; i++)
-			for (int k=0; k<nCellsZ; k++)
-			{
-				boundary[i][0][k] = boundary[i][nCellsY-2][k];
-				boundary[i][nCellsY-1][k] = boundary[i][1][k];
-			}
-
-			vtkSmartPointer<vtkUnstructuredGrid> grid = allocate_vtk_grid(nCellsX, nCellsY, nCellsZ);
-
-			vtkSmartPointer<vtkIntArray> vtk_cell_state = vtkSmartPointer<vtkIntArray>::New();
-			vtk_cell_state->SetName("cell state");
-			vtk_cell_state->SetNumberOfComponents(1);
-			vtk_cell_state->SetNumberOfTuples(nCellsX*nCellsY*nCellsZ);
-
-			// Unstructure grid of one cell state
-			vtkSmartPointer<vtkUnstructuredGrid> grid_cell = vtkSmartPointer<vtkUnstructuredGrid>::New();
-			vtkSmartPointer<vtkCellArray> cell_array = vtkSmartPointer<vtkCellArray>::New();			
-
-			vtkSmartPointer<vtkUnstructuredGrid> grid_boundary = vtkSmartPointer<vtkUnstructuredGrid>::New();
-			vtkSmartPointer<vtkCellArray> cell_array_boundary = vtkSmartPointer<vtkCellArray>::New();
-
-			grid_cell->SetPoints(grid->GetPoints());
-			grid_boundary->SetPoints(grid->GetPoints());
-
-			// Find the dominant state (the most number of cells)
-			std::vector<int> numberOfCells;
-			numberOfCells.resize(numberOfStates);
-			for (int i=0; i<numberOfStates; i++)
-				numberOfCells[i] = 0;
-
-			for (int i=0; i<nCellsX; i++)
-			for (int j=0; j<nCellsY; j++)
-			for (int k=0; k<nCellsZ; k++)
-			{
-				numberOfCells[ cell_state[i][j][k] ]++;
-			}
-
-			int positionOfMax = 0;
-			int maxNumberOfCells = 0;
-			for (int i=0; i<numberOfStates; i++)
-				if (numberOfCells[i] > maxNumberOfCells)
-				{
-					maxNumberOfCells = numberOfCells[i];
-					positionOfMax = i;
-				}
-
-			int selected_state = positionOfMax;
-			for (int i=0; i<nCellsX; i++)
-			for (int j=0; j<nCellsY; j++)
-			for (int k=0; k<nCellsZ; k++)
-				if (cell_state[i][j][k] == selected_state)
-				{
-					int thisCellId = nCellsX*nCellsY*k + nCellsY*j +i;
-					vtkCell *cell = grid->GetCell(thisCellId);
-					cell_array->InsertNextCell(cell);
-				}	
-			grid_cell->SetCells(VTK_HEXAHEDRON, cell_array);
-
-
-			for (int i=0; i<nCellsX; i++)
-			for (int j=0; j<nCellsY; j++)
-			for (int k=0; k<nCellsZ; k++)
-			{
-				if (boundary[i][j][k])
-				{
-					int thisCellId = nCellsX*nCellsY*k + nCellsY*j +i;
-					vtkCell *cell = grid->GetCell(thisCellId);
-					cell_array_boundary->InsertNextCell(cell);
-				}
-			}
-			grid_boundary->SetCells(VTK_HEXAHEDRON, cell_array_boundary);
-
-			int l = 0;
-			for (int k=0; k<nCellsZ; k++)
-			for (int j=0; j<nCellsY; j++)
-			for (int i=0; i<nCellsX; i++)
-			{
-				vtk_cell_state->SetTuple1(l,cell_state[i][j][k]);
-				l++;
-			}
-
-			grid->GetCellData()->AddArray(vtk_cell_state);
-			grid->GetCellData()->SetActiveScalars("cell state");
-
-
-			mapper_grid = vtkSmartPointer<vtkDataSetMapper>::New();
-			mapper_grid->SetInputData(grid);
-			mapper_grid->ScalarVisibilityOn();
-			mapper_grid->SetScalarModeToUseCellData();
-			mapper_grid->SetScalarRange(0, numberOfStates-1);
-		//	mapper_grid->SetLookupTable(lookupTable);
-
-			mapper_selected_state = vtkSmartPointer<vtkDataSetMapper>::New();
-			mapper_selected_state->SetInputData(grid_cell);
-			mapper_selected_state->ScalarVisibilityOn();
-			mapper_selected_state->SetScalarModeToUseCellData();
-			mapper_selected_state->SetScalarRange(0, numberOfStates-1);
-
-			mapper_boundary = vtkSmartPointer<vtkDataSetMapper>::New();
-			mapper_boundary->SetInputData(grid_boundary);
-			mapper_boundary->ScalarVisibilityOn();
-			mapper_boundary->SetScalarModeToUseCellData();
-			mapper_boundary->SetScalarRange(0, numberOfStates-1);
-		
-			vtkSmartPointer<vtkActor> actor_grid = vtkSmartPointer<vtkActor>::New();
-			actor_grid->SetMapper(mapper_grid);
-			actor_grid->RotateX(25.0);
-			actor_grid->RotateY(-25.0+0.000001*double(t));
-			actor_grid->GetProperty()->SetOpacity(0.5);
-
-			actor_selected_state = vtkSmartPointer<vtkActor>::New();
-			actor_selected_state->SetMapper(mapper_selected_state);
-			actor_selected_state->RotateX(25.0);
-			actor_selected_state->RotateY(-25.0+0.000001*double(t));
-			actor_selected_state->GetProperty()->SetColor(0.34,0.17,0.94);
-
-			actor_boundary = vtkSmartPointer<vtkActor>::New();
-			actor_boundary->SetMapper(mapper_boundary);
-			actor_boundary->RotateX(25.0);
-			actor_boundary->RotateY(-25.0+0.000001*double(t));
-			actor_boundary->GetProperty()->SetOpacity(0.02);
-			actor_boundary->GetProperty()->SetColor(0.34,0.17,0.94);
-
-			renderer = vtkSmartPointer<vtkRenderer>::New();
-
-			mapper_outline = vtkSmartPointer<vtkPolyDataMapper>::New();	
-
-			vtkSmartPointer<vtkOutlineFilter> outline = vtkSmartPointer<vtkOutlineFilter>::New();
-			outline->SetInputData(grid);
-			mapper_outline->SetInputConnection(outline->GetOutputPort());
-
-			actor_outline = vtkSmartPointer<vtkActor>::New();
-			actor_outline->SetMapper(mapper_outline);
-			actor_outline->RotateX(25.0);
-			actor_outline->RotateY(-25.0+0.000001*double(t));
-
-			// Decide what is shown in plot : 
-//			renderer->AddActor(actor_grid);					// plot the full grid (all states)
-			renderer->AddActor(actor_selected_state);			// plot only cells with one selected state
-			renderer->AddActor(actor_boundary);			// plot grain boundary
-			renderer->AddActor(actor_outline);			// plot outline
-			renderer->ResetCamera();
-			renderer->GetActiveCamera()->Zoom(1.5);
-			
-			renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-			renderWindow->AddRenderer(renderer);
-
-			renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-			renderWindowInteractor->SetRenderWindow(renderWindow);
-
-			renderWindow->Render();
-			renderWindow->WaitForCompletion();
-
-			cout << "Write into a file ..." << endl;
-			windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
-			windowToImageFilter->SetInput(renderWindow);
-			windowToImageFilter->SetInputBufferTypeToRGBA();
-			windowToImageFilter->ReadFrontBufferOff();
-			windowToImageFilter->SetScale(4,4);
-			windowToImageFilter->Update();
-
-			std::string std_frame; 
-			std_frame = to_string(frame);
-			int std_frame_size = std_frame.size();
-			for (int s=0; s<4-std_frame_size; s++)
-				std_frame.insert(0, "0");
-
-			writer = vtkSmartPointer<vtkPNGWriter>::New();
-			writer->SetFileName(("file-"+std_frame+".png").c_str());
-			writer->SetInputConnection(windowToImageFilter->GetOutputPort());
-			writer->Write();
-			frame++;
-
-			renderWindow->Finalize();
-			
-
-
+			postprocessor();	
 		}
-	//	renderWindowInteractor->Start();
-
+		itr++;
 	}
 
-//	usleep(5000000);
-
-
-	cout << "Main program has successfully finished!" << endl;
-	return EXIT_SUCCESS;
+	return;
 }
+
+void preprocessor()
+{
+	numberOfStates = 1000;
+
+	// Define the VTK grid
+	// Number of cells = number of cellular automata cells, I won't be plotting point data
+	nCellsX = 50;
+	nCellsY = 50;
+	nCellsZ = 50;
+	
+	// Allocate vector
+	cell_state.resize(nCellsX);
+	boundary.resize(nCellsX);
+	for (int i=0; i<nCellsX; i++)			
+	{
+		cell_state[i].resize(nCellsY);
+		boundary[i].resize(nCellsY);
+		for (int j=0; j<nCellsY; j++)
+		{
+			cell_state[i][j].resize(nCellsZ);
+			boundary[i][j].resize(nCellsZ);
+		}
+	}
+
+	// Initialize vector
+	std::uniform_int_distribution<int> distribution(0,numberOfStates-1);
+	std::uniform_int_distribution<int> distribution_i(1,nCellsX-2);	//exclude boundaries
+	std::uniform_int_distribution<int> distribution_j(1,nCellsY-2);
+	std::uniform_int_distribution<int> distribution_k(1,nCellsZ-2);
+
+	// Initialize with random noise
+	int l = 0;
+	for (int i=0; i<nCellsX; i++)
+	for (int j=0; j<nCellsY; j++)
+	for (int k=0; k<nCellsZ; k++)
+	{
+		cell_state[i][j][k] = distribution(generator);
+		boundary[i][j][k] = false;
+	}
+
+	return;
+}
+
+void postprocessor()
+{
+	cout << "post-processing ... " << endl;
+
+	for (int i=1; i<nCellsX-1; i++)
+	for (int j=1; j<nCellsY-1; j++)
+	for (int k=1; k<nCellsZ-1; k++)
+	{
+		int thisState = cell_state[i][j][k];
+		std::vector<int> q;
+		q.push_back(cell_state[i-1][j-1][k-1]);
+		q.push_back(cell_state[i-1][j-1][k]);
+		q.push_back(cell_state[i-1][j-1][k+1]);
+		q.push_back(cell_state[i-1][j][k-1]);
+		q.push_back(cell_state[i-1][j][k]);
+		q.push_back(cell_state[i-1][j][k+1]);
+		q.push_back(cell_state[i-1][j+1][k-1]);
+		q.push_back(cell_state[i-1][j+1][k]);
+		q.push_back(cell_state[i-1][j+1][k+1]);
+		q.push_back(cell_state[i][j-1][k-1]);
+		q.push_back(cell_state[i][j-1][k]);
+		q.push_back(cell_state[i][j-1][k+1]);
+		q.push_back(cell_state[i][j][k-1]);
+//		q.push_back(cell_state[i][j][k]);	// exclude the state itself
+		q.push_back(cell_state[i][j][k+1]);
+		q.push_back(cell_state[i][j+1][k-1]);
+		q.push_back(cell_state[i][j+1][k]);
+		q.push_back(cell_state[i][j+1][k+1]);
+		q.push_back(cell_state[i+1][j-1][k-1]);
+		q.push_back(cell_state[i+1][j-1][k]);
+		q.push_back(cell_state[i+1][j-1][k+1]);
+		q.push_back(cell_state[i+1][j][k-1]);
+		q.push_back(cell_state[i+1][j][k]);
+		q.push_back(cell_state[i+1][j][k+1]);
+		q.push_back(cell_state[i+1][j+1][k-1]);
+		q.push_back(cell_state[i+1][j+1][k]);
+		q.push_back(cell_state[i+1][j+1][k+1]);
+
+		boundary[i][j][k] = false;
+		for (int qq=0; qq<q.size(); qq++)
+			if (thisState != q[qq])
+			{
+				boundary[i][j][k] = true;
+				break;
+			}
+	}
+	// Periodic boundary conditions
+	for (int i=0; i<nCellsX; i++)
+	for (int j=0; j<nCellsY; j++)
+	{
+		boundary[i][j][0] = boundary[i][j][nCellsZ-2];
+		boundary[i][j][nCellsZ-1] = boundary[i][j][1];
+	}
+	for (int j=0; j<nCellsY; j++)
+	for (int k=0; k<nCellsZ; k++)
+	{
+		boundary[0][j][k] = boundary[nCellsX-2][j][k];
+		boundary[nCellsX-1][j][k] = boundary[1][j][k];
+	}
+	for (int i=0; i<nCellsX; i++)
+	for (int k=0; k<nCellsZ; k++)
+	{
+		boundary[i][0][k] = boundary[i][nCellsY-2][k];
+		boundary[i][nCellsY-1][k] = boundary[i][1][k];
+	}
+
+	vtkSmartPointer<vtkUnstructuredGrid> grid = allocate_vtk_grid(nCellsX, nCellsY, nCellsZ);
+
+	vtkSmartPointer<vtkIntArray> vtk_cell_state = vtkSmartPointer<vtkIntArray>::New();
+	vtk_cell_state->SetName("cell state");
+	vtk_cell_state->SetNumberOfComponents(1);
+	vtk_cell_state->SetNumberOfTuples(nCellsX*nCellsY*nCellsZ);
+
+	// Unstructure grid of one cell state
+	vtkSmartPointer<vtkUnstructuredGrid> grid_cell = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	vtkSmartPointer<vtkCellArray> cell_array = vtkSmartPointer<vtkCellArray>::New();			
+
+	vtkSmartPointer<vtkUnstructuredGrid> grid_boundary = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	vtkSmartPointer<vtkCellArray> cell_array_boundary = vtkSmartPointer<vtkCellArray>::New();
+
+	grid_cell->SetPoints(grid->GetPoints());
+	grid_boundary->SetPoints(grid->GetPoints());
+
+	// Find the dominant state (the most number of cells)
+	std::vector<int> numberOfCells;
+	numberOfCells.resize(numberOfStates);
+	for (int i=0; i<numberOfStates; i++)
+		numberOfCells[i] = 0;
+
+	for (int i=0; i<nCellsX; i++)
+	for (int j=0; j<nCellsY; j++)
+	for (int k=0; k<nCellsZ; k++)
+	{
+		numberOfCells[ cell_state[i][j][k] ]++;
+	}
+
+	int positionOfMax = 0;
+	int maxNumberOfCells = 0;
+	for (int i=0; i<numberOfStates; i++)
+		if (numberOfCells[i] > maxNumberOfCells)
+		{
+			maxNumberOfCells = numberOfCells[i];
+			positionOfMax = i;
+		}
+
+	int selected_state = positionOfMax;
+	for (int i=0; i<nCellsX; i++)
+	for (int j=0; j<nCellsY; j++)
+	for (int k=0; k<nCellsZ; k++)
+		if (cell_state[i][j][k] == selected_state)
+		{
+			int thisCellId = nCellsX*nCellsY*k + nCellsY*j +i;
+			vtkCell *cell = grid->GetCell(thisCellId);
+			cell_array->InsertNextCell(cell);
+		}	
+	grid_cell->SetCells(VTK_HEXAHEDRON, cell_array);
+
+
+	for (int i=0; i<nCellsX; i++)
+	for (int j=0; j<nCellsY; j++)
+	for (int k=0; k<nCellsZ; k++)
+	{
+		if (boundary[i][j][k])
+		{
+			int thisCellId = nCellsX*nCellsY*k + nCellsY*j +i;
+			vtkCell *cell = grid->GetCell(thisCellId);
+			cell_array_boundary->InsertNextCell(cell);
+		}
+	}
+	grid_boundary->SetCells(VTK_HEXAHEDRON, cell_array_boundary);
+
+	int l = 0;
+	for (int k=0; k<nCellsZ; k++)
+	for (int j=0; j<nCellsY; j++)
+	for (int i=0; i<nCellsX; i++)
+	{
+		vtk_cell_state->SetTuple1(l,cell_state[i][j][k]);
+		l++;
+	}
+
+	grid->GetCellData()->AddArray(vtk_cell_state);
+	grid->GetCellData()->SetActiveScalars("cell state");
+
+
+	mapper_grid = vtkSmartPointer<vtkDataSetMapper>::New();
+	mapper_grid->SetInputData(grid);
+	mapper_grid->ScalarVisibilityOn();
+	mapper_grid->SetScalarModeToUseCellData();
+	mapper_grid->SetScalarRange(0, numberOfStates-1);
+//	mapper_grid->SetLookupTable(lookupTable);
+
+	mapper_selected_state = vtkSmartPointer<vtkDataSetMapper>::New();
+	mapper_selected_state->SetInputData(grid_cell);
+	mapper_selected_state->ScalarVisibilityOn();
+	mapper_selected_state->SetScalarModeToUseCellData();
+	mapper_selected_state->SetScalarRange(0, numberOfStates-1);
+
+	mapper_boundary = vtkSmartPointer<vtkDataSetMapper>::New();
+	mapper_boundary->SetInputData(grid_boundary);
+	mapper_boundary->ScalarVisibilityOn();
+	mapper_boundary->SetScalarModeToUseCellData();
+	mapper_boundary->SetScalarRange(0, numberOfStates-1);
+
+	vtkSmartPointer<vtkActor> actor_grid = vtkSmartPointer<vtkActor>::New();
+	actor_grid->SetMapper(mapper_grid);
+	actor_grid->RotateX(25.0);
+	actor_grid->RotateY(-25.0+0.000001*double(itr));
+	actor_grid->GetProperty()->SetOpacity(0.5);
+
+	actor_selected_state = vtkSmartPointer<vtkActor>::New();
+	actor_selected_state->SetMapper(mapper_selected_state);
+	actor_selected_state->RotateX(25.0);
+	actor_selected_state->RotateY(-25.0+0.000001*double(itr));
+	actor_selected_state->GetProperty()->SetColor(0.34,0.17,0.94);
+
+	actor_boundary = vtkSmartPointer<vtkActor>::New();
+	actor_boundary->SetMapper(mapper_boundary);
+	actor_boundary->RotateX(25.0);
+	actor_boundary->RotateY(-25.0+0.000001*double(itr));
+	actor_boundary->GetProperty()->SetOpacity(0.02);
+	actor_boundary->GetProperty()->SetColor(0.34,0.17,0.94);
+
+	renderer = vtkSmartPointer<vtkRenderer>::New();
+
+	mapper_outline = vtkSmartPointer<vtkPolyDataMapper>::New();	
+
+	vtkSmartPointer<vtkOutlineFilter> outline = vtkSmartPointer<vtkOutlineFilter>::New();
+	outline->SetInputData(grid);
+	mapper_outline->SetInputConnection(outline->GetOutputPort());
+
+	actor_outline = vtkSmartPointer<vtkActor>::New();
+	actor_outline->SetMapper(mapper_outline);
+	actor_outline->RotateX(25.0);
+	actor_outline->RotateY(-25.0+0.000001*double(itr));
+
+	// Decide what is shown in plot : 
+//			renderer->AddActor(actor_grid);					// plot the full grid (all states)
+	renderer->AddActor(actor_selected_state);			// plot only cells with one selected state
+	renderer->AddActor(actor_boundary);			// plot grain boundary
+	renderer->AddActor(actor_outline);			// plot outline
+	renderer->ResetCamera();
+	renderer->GetActiveCamera()->Zoom(1.5);
+	
+	renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	renderWindow->AddRenderer(renderer);
+
+	renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	renderWindowInteractor->SetRenderWindow(renderWindow);
+
+	renderWindow->Render();
+	renderWindow->WaitForCompletion();
+
+	cout << "Write into a file ..." << endl;
+	windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
+	windowToImageFilter->SetInput(renderWindow);
+	windowToImageFilter->SetInputBufferTypeToRGBA();
+	windowToImageFilter->ReadFrontBufferOff();
+	windowToImageFilter->SetScale(4,4);
+	windowToImageFilter->Update();
+
+	std::string std_frame; 
+	std_frame = to_string(frame);
+	int std_frame_size = std_frame.size();
+	for (int s=0; s<4-std_frame_size; s++)
+		std_frame.insert(0, "0");
+
+	writer = vtkSmartPointer<vtkPNGWriter>::New();
+	writer->SetFileName(("../screenshots/file-"+std_frame+".png").c_str());
+	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+	writer->Write();
+	frame++;
+
+	renderWindow->Finalize();
+
+	return;
+}
+
 
 vtkSmartPointer<vtkUnstructuredGrid> allocate_vtk_grid(int NX, int NY, int NZ)
 {

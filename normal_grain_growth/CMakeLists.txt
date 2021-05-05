@@ -26,6 +26,8 @@ else()
     message(FATAL_ERROR "${BoldRed}VTK not found${ColourReset}")
 endif()	
 
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/screenshots)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${HEADER_DIR})
