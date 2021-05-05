@@ -74,6 +74,6 @@ std::default_random_engine generator;
 int itr = 0;
 int frame = 0;
 
-double rotation_rate = 0.00001;
+double rotation_rate = 0.1;
 
 #endif

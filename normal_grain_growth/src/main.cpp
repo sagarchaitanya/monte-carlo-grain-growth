@@ -252,6 +252,13 @@ void preprocessor()
 //	windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
 //	writer = vtkSmartPointer<vtkPNGWriter>::New();
 
+	double backgroundColor1[3] = {1,1,1};
+	double backgroundColor2[3] = {0,0,1};
+
+	renderer->GradientBackgroundOn();
+	renderer->SetBackground(backgroundColor1);
+	renderer->SetBackground2(backgroundColor2);
+
 	return;
 }
 
