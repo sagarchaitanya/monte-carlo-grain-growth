@@ -3,7 +3,7 @@ project(grain_growth)
 set(CMAKE_BUILD_TYPE Release)
 
 set(HEADERS
-#	${HEADER_DIR}/*.h
+	${HEADER_DIR}/main.h
 )
 
 set(SOURCES

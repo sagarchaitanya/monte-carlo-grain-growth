@@ -1,32 +1,4 @@
-#include <iostream>
-#include <vector>
-#include <random>
-#include <unistd.h>
-
-#include <vtkUnstructuredGrid.h>
-#include <vtkUnstructuredGridWriter.h>
-#include <vtkCellData.h>
-#include <vtkHexahedron.h>
-#include <vtkSmartPointer.h>
-#include <vtkIntArray.h>
-#include <vtkCellArray.h>
-
-#include <vtkActor.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkDataSetMapper.h>
-#include <vtkCamera.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkOutlineFilter.h>
-#include <vtkProperty.h>
-
-#include <vtkWindowToImageFilter.h>
-#include <vtkPNGWriter.h>
-
-vtkSmartPointer<vtkUnstructuredGrid> allocate_vtk_grid(int NX, int NY, int NZ);
-
-using namespace std;
+#include "main.h"
 
 int main(int argc, char *argv[])
 {
@@ -42,8 +14,6 @@ int main(int argc, char *argv[])
 	int nCellsZ = 50;
 	
 	// Allocate vector
-	vector<vector<vector<int>>> cell_state;		// state of the cell (grain orientation)
-	vector<vector<vector<bool>>> boundary;		// if true == boundary, if false == grain interior
 	cell_state.resize(nCellsX);
 	boundary.resize(nCellsX);
 	for (int i=0; i<nCellsX; i++)			
@@ -371,75 +341,76 @@ int main(int argc, char *argv[])
 			grid->GetCellData()->SetActiveScalars("cell state");
 
 
-			vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-			mapper->SetInputData(grid);
-			mapper->ScalarVisibilityOn();
-			mapper->SetScalarModeToUseCellData();
-			mapper->SetScalarRange(0, numberOfStates-1);
-		//	mapper->SetLookupTable(lookupTable);
+			mapper_grid = vtkSmartPointer<vtkDataSetMapper>::New();
+			mapper_grid->SetInputData(grid);
+			mapper_grid->ScalarVisibilityOn();
+			mapper_grid->SetScalarModeToUseCellData();
+			mapper_grid->SetScalarRange(0, numberOfStates-1);
+		//	mapper_grid->SetLookupTable(lookupTable);
 
-			vtkSmartPointer<vtkDataSetMapper> mapper_state = vtkSmartPointer<vtkDataSetMapper>::New();
-			mapper_state->SetInputData(grid_cell);
-			mapper_state->ScalarVisibilityOn();
-			mapper_state->SetScalarModeToUseCellData();
-			mapper_state->SetScalarRange(0, numberOfStates-1);
+			mapper_selected_state = vtkSmartPointer<vtkDataSetMapper>::New();
+			mapper_selected_state->SetInputData(grid_cell);
+			mapper_selected_state->ScalarVisibilityOn();
+			mapper_selected_state->SetScalarModeToUseCellData();
+			mapper_selected_state->SetScalarRange(0, numberOfStates-1);
 
-			vtkSmartPointer<vtkDataSetMapper> mapper_boundary = vtkSmartPointer<vtkDataSetMapper>::New();
+			mapper_boundary = vtkSmartPointer<vtkDataSetMapper>::New();
 			mapper_boundary->SetInputData(grid_boundary);
 			mapper_boundary->ScalarVisibilityOn();
 			mapper_boundary->SetScalarModeToUseCellData();
 			mapper_boundary->SetScalarRange(0, numberOfStates-1);
 		
-			vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-			actor->SetMapper(mapper);
-			actor->RotateX(25.0);
-			actor->RotateY(-25.0+0.000001*double(t));
-			actor->GetProperty()->SetOpacity(0.5);
+			vtkSmartPointer<vtkActor> actor_grid = vtkSmartPointer<vtkActor>::New();
+			actor_grid->SetMapper(mapper_grid);
+			actor_grid->RotateX(25.0);
+			actor_grid->RotateY(-25.0+0.000001*double(t));
+			actor_grid->GetProperty()->SetOpacity(0.5);
 
-			vtkSmartPointer<vtkActor> actor_state = vtkSmartPointer<vtkActor>::New();
-			actor_state->SetMapper(mapper_state);
-			actor_state->RotateX(25.0);
-			actor_state->RotateY(-25.0+0.000001*double(t));
-			actor_state->GetProperty()->SetColor(0.34,0.17,0.94);
+			actor_selected_state = vtkSmartPointer<vtkActor>::New();
+			actor_selected_state->SetMapper(mapper_selected_state);
+			actor_selected_state->RotateX(25.0);
+			actor_selected_state->RotateY(-25.0+0.000001*double(t));
+			actor_selected_state->GetProperty()->SetColor(0.34,0.17,0.94);
 
-			vtkSmartPointer<vtkActor> actor_boundary = vtkSmartPointer<vtkActor>::New();
+			actor_boundary = vtkSmartPointer<vtkActor>::New();
 			actor_boundary->SetMapper(mapper_boundary);
 			actor_boundary->RotateX(25.0);
 			actor_boundary->RotateY(-25.0+0.000001*double(t));
 			actor_boundary->GetProperty()->SetOpacity(0.02);
 			actor_boundary->GetProperty()->SetColor(0.34,0.17,0.94);
 
-			vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+			renderer = vtkSmartPointer<vtkRenderer>::New();
 
-			vtkSmartPointer<vtkPolyDataMapper> outlineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();	
+			mapper_outline = vtkSmartPointer<vtkPolyDataMapper>::New();	
 
 			vtkSmartPointer<vtkOutlineFilter> outline = vtkSmartPointer<vtkOutlineFilter>::New();
 			outline->SetInputData(grid);
-			outlineMapper->SetInputConnection(outline->GetOutputPort());
+			mapper_outline->SetInputConnection(outline->GetOutputPort());
 
-			vtkSmartPointer<vtkActor> outlineActor = vtkSmartPointer<vtkActor>::New();
-			outlineActor->SetMapper(outlineMapper);
-			outlineActor->RotateX(25.0);
-			outlineActor->RotateY(-25.0+0.000001*double(t));
+			actor_outline = vtkSmartPointer<vtkActor>::New();
+			actor_outline->SetMapper(mapper_outline);
+			actor_outline->RotateX(25.0);
+			actor_outline->RotateY(-25.0+0.000001*double(t));
 
 			// Decide what is shown in plot : 
-//			renderer->AddActor(actor);					// plot the full grid (all states)
-			renderer->AddActor(actor_state);			// plot only cells with one selected state
+//			renderer->AddActor(actor_grid);					// plot the full grid (all states)
+			renderer->AddActor(actor_selected_state);			// plot only cells with one selected state
 			renderer->AddActor(actor_boundary);			// plot grain boundary
-			renderer->AddActor(outlineActor);			// plot outline
+			renderer->AddActor(actor_outline);			// plot outline
 			renderer->ResetCamera();
 			renderer->GetActiveCamera()->Zoom(1.5);
 			
-			vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+			renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
 			renderWindow->AddRenderer(renderer);
 
-			vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+			renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
 			renderWindowInteractor->SetRenderWindow(renderWindow);
 
 			renderWindow->Render();
+			renderWindow->WaitForCompletion();
 
 			cout << "Write into a file ..." << endl;
-			vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
+			windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
 			windowToImageFilter->SetInput(renderWindow);
 			windowToImageFilter->SetInputBufferTypeToRGBA();
 			windowToImageFilter->ReadFrontBufferOff();
@@ -452,12 +423,16 @@ int main(int argc, char *argv[])
 			for (int s=0; s<4-std_frame_size; s++)
 				std_frame.insert(0, "0");
 
-
-			vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+			writer = vtkSmartPointer<vtkPNGWriter>::New();
 			writer->SetFileName(("file-"+std_frame+".png").c_str());
 			writer->SetInputConnection(windowToImageFilter->GetOutputPort());
 			writer->Write();
 			frame++;
+
+			renderWindow->Finalize();
+			
+
+
 		}
 	//	renderWindowInteractor->Start();
 
