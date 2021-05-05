@@ -171,7 +171,7 @@ void run()
 		}
 
 		// [[ POST-PROCESSING ]]
-		if (itr%100000 == 0)
+		if (itr%10000 == 0)
 		{
 			postprocessor();	
 		}
@@ -183,13 +183,14 @@ void run()
 
 void preprocessor()
 {
+	cout << "Preprocessor ... " << endl;
 	numberOfStates = 1000;
 
 	// Define the VTK grid
 	// Number of cells = number of cellular automata cells, I won't be plotting point data
-	nCellsX = 50;
-	nCellsY = 50;
-	nCellsZ = 50;
+	nCellsX = 25;
+	nCellsY = 25;
+	nCellsZ = 25;
 	
 	// Allocate vector
 	cell_state.resize(nCellsX);
@@ -220,6 +221,36 @@ void preprocessor()
 		cell_state[i][j][k] = distribution(generator);
 		boundary[i][j][k] = false;
 	}
+
+	renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	mapper_grid = vtkSmartPointer<vtkDataSetMapper>::New();
+	mapper_selected_state = vtkSmartPointer<vtkDataSetMapper>::New();
+	mapper_boundary = vtkSmartPointer<vtkDataSetMapper>::New();
+
+	renderer = vtkSmartPointer<vtkRenderer>::New();
+	renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	renderWindow->AddRenderer(renderer);
+	renderWindowInteractor->SetRenderWindow(renderWindow);
+
+	actor_outline = vtkSmartPointer<vtkActor>::New();
+	actor_boundary = vtkSmartPointer<vtkActor>::New();
+	actor_selected_state = vtkSmartPointer<vtkActor>::New();
+	actor_grid = vtkSmartPointer<vtkActor>::New();
+
+	actor_grid->RotateX(25.0);
+	actor_grid->RotateY(-25.0);
+
+	actor_selected_state->RotateX(25.0);
+	actor_selected_state->RotateY(-25.0);
+
+	actor_boundary->RotateX(25.0);
+	actor_boundary->RotateY(-25.0);
+
+	actor_outline->RotateX(25.0);
+	actor_outline->RotateY(-25.0);	// the plot will rotate
+
+//	windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
+//	writer = vtkSmartPointer<vtkPNGWriter>::New();
 
 	return;
 }
@@ -367,46 +398,37 @@ void postprocessor()
 	grid->GetCellData()->AddArray(vtk_cell_state);
 	grid->GetCellData()->SetActiveScalars("cell state");
 
-
-	mapper_grid = vtkSmartPointer<vtkDataSetMapper>::New();
 	mapper_grid->SetInputData(grid);
 	mapper_grid->ScalarVisibilityOn();
 	mapper_grid->SetScalarModeToUseCellData();
 	mapper_grid->SetScalarRange(0, numberOfStates-1);
 //	mapper_grid->SetLookupTable(lookupTable);
 
-	mapper_selected_state = vtkSmartPointer<vtkDataSetMapper>::New();
 	mapper_selected_state->SetInputData(grid_cell);
 	mapper_selected_state->ScalarVisibilityOn();
 	mapper_selected_state->SetScalarModeToUseCellData();
 	mapper_selected_state->SetScalarRange(0, numberOfStates-1);
 
-	mapper_boundary = vtkSmartPointer<vtkDataSetMapper>::New();
 	mapper_boundary->SetInputData(grid_boundary);
 	mapper_boundary->ScalarVisibilityOn();
 	mapper_boundary->SetScalarModeToUseCellData();
 	mapper_boundary->SetScalarRange(0, numberOfStates-1);
 
-	vtkSmartPointer<vtkActor> actor_grid = vtkSmartPointer<vtkActor>::New();
 	actor_grid->SetMapper(mapper_grid);
-	actor_grid->RotateX(25.0);
-	actor_grid->RotateY(-25.0+0.000001*double(itr));
-	actor_grid->GetProperty()->SetOpacity(0.5);
+	actor_grid->RotateX(0.0);
+	actor_grid->RotateY(rotation_rate);
+	actor_grid->GetProperty()->SetOpacity(1.0);
 
-	actor_selected_state = vtkSmartPointer<vtkActor>::New();
 	actor_selected_state->SetMapper(mapper_selected_state);
-	actor_selected_state->RotateX(25.0);
-	actor_selected_state->RotateY(-25.0+0.000001*double(itr));
+	actor_selected_state->RotateX(0.0);
+	actor_selected_state->RotateY(rotation_rate);
 	actor_selected_state->GetProperty()->SetColor(0.34,0.17,0.94);
 
-	actor_boundary = vtkSmartPointer<vtkActor>::New();
 	actor_boundary->SetMapper(mapper_boundary);
-	actor_boundary->RotateX(25.0);
-	actor_boundary->RotateY(-25.0+0.000001*double(itr));
+	actor_boundary->RotateX(0.0);
+	actor_boundary->RotateY(rotation_rate);
 	actor_boundary->GetProperty()->SetOpacity(0.02);
 	actor_boundary->GetProperty()->SetColor(0.34,0.17,0.94);
-
-	renderer = vtkSmartPointer<vtkRenderer>::New();
 
 	mapper_outline = vtkSmartPointer<vtkPolyDataMapper>::New();	
 
@@ -414,34 +436,36 @@ void postprocessor()
 	outline->SetInputData(grid);
 	mapper_outline->SetInputConnection(outline->GetOutputPort());
 
-	actor_outline = vtkSmartPointer<vtkActor>::New();
 	actor_outline->SetMapper(mapper_outline);
-	actor_outline->RotateX(25.0);
-	actor_outline->RotateY(-25.0+0.000001*double(itr));
+	actor_outline->RotateX(0.0);
+	actor_outline->RotateY(rotation_rate);	// the plot will rotate
+
+	renderer->RemoveActor(actor_grid);
+	renderer->RemoveActor(actor_selected_state);
+	renderer->RemoveActor(actor_boundary);
+	renderer->RemoveActor(actor_outline);
 
 	// Decide what is shown in plot : 
-//			renderer->AddActor(actor_grid);					// plot the full grid (all states)
-	renderer->AddActor(actor_selected_state);			// plot only cells with one selected state
-	renderer->AddActor(actor_boundary);			// plot grain boundary
+	renderer->AddActor(actor_grid);					// plot the full grid (all states)
+//	renderer->AddActor(actor_selected_state);			// plot only cells with one selected state
+//	renderer->AddActor(actor_boundary);			// plot grain boundary
 	renderer->AddActor(actor_outline);			// plot outline
 	renderer->ResetCamera();
 	renderer->GetActiveCamera()->Zoom(1.5);
-	
-	renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-	renderWindow->AddRenderer(renderer);
-
-	renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-	renderWindowInteractor->SetRenderWindow(renderWindow);
 
 	renderWindow->Render();
-	renderWindow->WaitForCompletion();
 
 	cout << "Write into a file ..." << endl;
+	vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter;
+	vtkSmartPointer<vtkPNGWriter> writer;
+
 	windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
+	writer = vtkSmartPointer<vtkPNGWriter>::New();
+
 	windowToImageFilter->SetInput(renderWindow);
 	windowToImageFilter->SetInputBufferTypeToRGBA();
 	windowToImageFilter->ReadFrontBufferOff();
-	windowToImageFilter->SetScale(4,4);
+//	windowToImageFilter->SetScale(4,4);		// increase resolution of the image
 	windowToImageFilter->Update();
 
 	std::string std_frame; 
@@ -450,13 +474,15 @@ void postprocessor()
 	for (int s=0; s<4-std_frame_size; s++)
 		std_frame.insert(0, "0");
 
-	writer = vtkSmartPointer<vtkPNGWriter>::New();
 	writer->SetFileName(("../screenshots/file-"+std_frame+".png").c_str());
 	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
 	writer->Write();
 	frame++;
 
-	renderWindow->Finalize();
+	renderer->ResetCamera();
+	renderer->GetActiveCamera()->Zoom(1.5);
+	renderWindow->Render();
+
 
 	return;
 }

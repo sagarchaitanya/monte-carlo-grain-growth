@@ -59,8 +59,8 @@ vtkSmartPointer<vtkRenderWindow> renderWindow;
 vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor;
 
 // [[ PNG WRITER ]]
-vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter;
-vtkSmartPointer<vtkPNGWriter> writer;
+//vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter;
+//vtkSmartPointer<vtkPNGWriter> writer;
 
 // [[ SCALARS ]]
 int nCellsX;
@@ -73,5 +73,7 @@ std::default_random_engine generator;
 
 int itr = 0;
 int frame = 0;
+
+double rotation_rate = 0.00001;
 
 #endif
